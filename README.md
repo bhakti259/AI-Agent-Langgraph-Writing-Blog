@@ -13,7 +13,7 @@ Current script: `1_basic_blog_writing_agent.py`
 - `1_basic_blog_writing_agent.py` - main LangGraph workflow
 - `requirements.txt` - Python dependencies
 - `.env.example` - environment variable template
-- `the_benefits_of_using_ai_in_education.md` - sample generated output
+- `unlocking_learning_potential_the_benefits_of_using_ai_in_education.md` - sample generated output
 
 ## Requirements
 
@@ -75,7 +75,18 @@ LANGCHAIN_PROJECT="langgraph-chatbot"
 
 ## Output
 
-The script writes a markdown blog file in the project folder, named from the generated blog title (for example: `the_benefits_of_using_ai_in_education.md`).
+The script writes a markdown blog file in the project folder, named from the generated blog title.
+
+Filename behavior:
+
+- Output is always saved in the same folder as `1_basic_blog_writing_agent.py`
+- Generated filenames are sanitized for Windows-invalid characters (`< > : " / \\ | ? *`)
+- Empty/whitespace-only content is rejected with an explicit error
+
+Example output names:
+
+- `unlocking_learning_potential_the_benefits_of_using_ai_in_education.md`
+- `unlocking_the_benefits_of_ai_in_education_a_developer's_guide.md`
 
 ## Notes
 
