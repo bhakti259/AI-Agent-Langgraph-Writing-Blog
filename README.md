@@ -1,94 +1,105 @@
-# AI Agent (LangGraph) - Writing Blog
+# AI Agent (LangGraph) — Blog Writing
 
-A basic **LangGraph-powered blog writing agent** that:
+This project contains two LangGraph-based blog generators:
 
-1. Creates a blog plan from a topic
-2. Fans out section-writing tasks
-3. Reduces sections into a final markdown blog file
-
-Current script: `1_basic_blog_writing_agent.py`
+1. **Basic writer** (`1_basic_blog_writing_agent.py`)  
+   Plans sections and writes a complete Markdown blog.
+2. **Research writer** (`2_research_blog_writing_agent.py`)  
+   Adds routing + web research (Tavily) before planning and drafting sections.
 
 ## Project structure
 
-- `1_basic_blog_writing_agent.py` - main LangGraph workflow
-- `requirements.txt` - Python dependencies
-- `.env.example` - environment variable template
-- `unlocking_learning_potential_the_benefits_of_using_ai_in_education.md` - sample generated output
+- `1_basic_blog_writing_agent.py` — basic planner → workers → reducer flow
+- `2_research_blog_writing_agent.py` — router → optional research → planner → workers → reducer
+- `requirements.txt` — project dependencies
+- `.env.example` — environment variable template
+- `unlocking_learning_potential_the_benefits_of_using_ai_in_education.md` — sample generated output
 
 ## Requirements
 
-- Python 3.11+ (3.11/3.12 recommended for best LangChain compatibility)
+- Python **3.11+** (Python 3.11/3.12 recommended for best ecosystem compatibility)
 - OpenAI API key
+- Tavily API key (required for research-enabled flow)
 
 ## Setup
 
-1. Create and activate virtual environment
+### 1) Create and activate a virtual environment
 
-### Windows (cmd)
+#### Windows (cmd)
 
 ```bat
 python -m venv .venv
 call .venv\Scripts\activate.bat
 ```
 
-### Windows (PowerShell)
+#### Windows (PowerShell)
 
 ```powershell
 python -m venv .venv
-. .venv/Scripts/Activate.ps1
+. .\.venv\Scripts\Activate.ps1
 ```
 
-1. Install dependencies
+### 2) Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-1. Configure environment variables
+### 3) Configure environment variables
 
 - Copy `.env.example` to `.env`
-- Fill in your keys (especially `OPENAI_API_KEY`)
+- Fill in required keys
 
 Example:
 
 ```dotenv
 OPENAI_API_KEY="your_openai_api_key_here"
+TAVILY_API_KEY="your_tavily_api_key_here"
+
+# Optional observability
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
 LANGCHAIN_API_KEY="your_langsmith_api_key_here"
-LANGCHAIN_PROJECT="langgraph-chatbot"
+LANGCHAIN_PROJECT="langgraph-blog-agent"
 ```
 
 ## Run
 
-### cmd
-
-```bat
-"D:\Python Projects\Langgraph_AI_Agent_Writing_Blog\.venv\Scripts\python.exe" "D:\Python Projects\Langgraph_AI_Agent_Writing_Blog\1_basic_blog_writing_agent.py"
-```
-
-### PowerShell
+### Basic writer
 
 ```powershell
-& "D:/Python Projects/Langgraph_AI_Agent_Writing_Blog/.venv/Scripts/python.exe" "D:/Python Projects/Langgraph_AI_Agent_Writing_Blog/1_basic_blog_writing_agent.py"
+& ".venv/Scripts/python.exe" "1_basic_blog_writing_agent.py"
 ```
+
+### Research writer (uses Tavily)
+
+```powershell
+& ".venv/Scripts/python.exe" "2_research_blog_writing_agent.py"
+```
+
+## How the research writer works
+
+The `2_research_blog_writing_agent.py` workflow runs this graph:
+
+`START → router → (research or orchestrator) → worker fanout → reducer → END`
+
+- **Router** decides `closed_book`, `hybrid`, or `open_book`
+- **Research node** gathers evidence URLs/snippets via Tavily when needed
+- **Orchestrator** creates a structured section plan
+- **Worker nodes** draft section Markdown
+- **Reducer** joins sections and writes final blog output
 
 ## Output
 
-The script writes a markdown blog file in the project folder, named from the generated blog title.
+- A Markdown file is generated in the project folder.
+- In the research script, filename is based on `plan.blog_title`.
 
-Filename behavior:
+Example generated file:
 
-- Output is always saved in the same folder as `1_basic_blog_writing_agent.py`
-- Generated filenames are sanitized for Windows-invalid characters (`< > : " / \\ | ? *`)
-- Empty/whitespace-only content is rejected with an explicit error
-
-Example output names:
-
-- `unlocking_learning_potential_the_benefits_of_using_ai_in_education.md`
-- `unlocking_the_benefits_of_ai_in_education_a_developer's_guide.md`
+- `State of Multimodal LLMs in 2026.md`
 
 ## Notes
 
-- `.env` is ignored by git to protect secrets.
-- If you see warnings about Python 3.14 compatibility, consider using Python 3.11/3.12.
+- `.env` is git-ignored to protect secrets.
+- If you encounter Python 3.14 compatibility warnings from dependencies, prefer Python 3.11/3.12.
+- You may see deprecation warnings for `TavilySearchResults`; the script still runs, but future cleanup can migrate to `langchain_tavily`.
