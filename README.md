@@ -1,63 +1,86 @@
-# AI Agent (LangGraph) — Blog Writing
+# LangGraph AI Blog Writing Agent (Mini Project)
 
-This repository contains two LangGraph-based blog generators:
+An interview-ready mini project that turns a topic into a structured technical blog using a **multi-agent LangGraph workflow**, optional live research, and automated image generation.
 
-1. **Basic writer** (`1_basic_blog_writing_agent.py`)  
-   Plans sections and writes a Markdown blog.
-2. **Research + image writer** (`2_research_blog_writing_agent.py`)  
-   Adds routing, optional Tavily research, and image enrichment (Gemini + local SVG fallback).
+## 🚀 30-second overview
 
-## Project structure
+**Problem:** Writing quality technical blogs takes planning, research, structure, and visuals.  
+**Solution:** A multi-agent pipeline that automates end-to-end blog creation.  
+**Input:** Topic + as-of date.  
+**Output:** Markdown blog (`output.md`) + generated images (`images/`) + downloadable bundle from UI.
 
-- `1_basic_blog_writing_agent.py` — planner → workers → reducer flow
-- `2_research_blog_writing_agent.py` — router → optional research → planner → workers → reducer subgraph with images
-- `images/` — generated images (PNG or local fallback SVG)
-- `output.md` — latest generated blog output from the research writer
-- `requirements.txt` — project dependencies
-- `.env.example` — environment variable template
+### What this demonstrates
 
-## Requirements
+- Multi-agent orchestration with LangGraph (router → research → planner → workers → reducer)
+- Structured outputs using Pydantic models
+- Retrieval-augmented writing with Tavily (when needed)
+- Image enrichment with Gemini + deterministic SVG fallback
+- Productized UX via Streamlit (plan/evidence/preview/images/logs tabs)
 
-- Python **3.11+** (Python 3.11/3.12 recommended for best compatibility)
-- OpenAI API key (`OPENAI_API_KEY`)
-- Tavily API key (`TAVILY_API_KEY`) for research mode
-- Google AI API key (`GOOGLE_API_KEY`) for Gemini image generation (optional if fallback images are acceptable)
+## 🖥️ UI preview (for interview demo)
 
-## Setup
+![Home UI](images/ui/01-home-ui.png)
+![Evidence and references tab](images/ui/02-eveidence-referal.png)
 
-### 1) Create and activate a virtual environment
+## 📝 Generated blog sample
 
-#### Windows (cmd)
+- Sample generated markdown:  
+   [`images/blog/overcoming_challenges_in_integration_management_offices_of_large_organizations_with_ai_solutions.md`](images/blog/overcoming_challenges_in_integration_management_offices_of_large_organizations_with_ai_solutions.md)
+- Current latest output:  
+   [`output.md`](output.md)
 
-```bat
-python -m venv .venv
-call .venv\Scripts\activate.bat
+Example generated visual asset:
+
+![Generated blog image sample](images/blog/images/challenges_faced_by_integration_management_office_in_bigger_organizations_and_practical_solutions_with_ai_1.png)
+
+## 🧠 Architecture at a glance
+
+Detailed architecture diagram (recommended for interview walkthrough):  
+[`images/architecture/langgraph_blog_architecture.md`](images/architecture/langgraph_blog_architecture.md)
+
+```mermaid
+flowchart LR
+      A[User Topic] --> B[Router]
+      B -->|closed_book| D[Orchestrator]
+      B -->|hybrid/open_book| C[Research - Tavily]
+      C --> D
+      D --> E[Worker Fanout]
+      E --> F[Merge Content]
+      F --> G[Decide Images]
+      G --> H[Generate & Place Images]
+      H --> I[Final Markdown + Assets]
 ```
 
-#### Windows (PowerShell)
+## 🛠️ Tech stack
+
+- **Language:** Python 3.11+
+- **Agent orchestration:** LangGraph
+- **LLM orchestration:** LangChain
+- **Models:** OpenAI (`gpt-4.1-mini` / `gpt-4o-mini`), Gemini image model
+- **Research:** Tavily search
+- **UI:** Streamlit + Pandas
+- **Validation:** Pydantic
+
+## ⚡ Quick start
+
+### 1) Setup
 
 ```powershell
 python -m venv .venv
 . .\.venv\Scripts\Activate.ps1
-```
-
-### 2) Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3) Configure environment variables
+> If you want to run the Streamlit UI and image generation but don't already have them installed, add: `streamlit`, `pandas`, `tavily-python`, `google-genai`.
 
-- Copy `.env.example` to `.env`
-- Fill in keys
+### 2) Configure environment variables
 
-Example:
+Create a `.env` file in project root:
 
 ```dotenv
 OPENAI_API_KEY="your_openai_api_key_here"
-TAVILY_API_KEY="your_tavily_api_key_here"
-GOOGLE_API_KEY="your_google_ai_api_key_here"
+TAVILY_API_KEY="your_tavily_api_key_here"            # optional for research mode
+GOOGLE_API_KEY="your_google_ai_api_key_here"         # optional for AI image generation
 
 # Optional observability
 LANGCHAIN_TRACING_V2=true
@@ -66,47 +89,40 @@ LANGCHAIN_API_KEY="your_langsmith_api_key_here"
 LANGCHAIN_PROJECT="langgraph-blog-agent"
 ```
 
-## Run
+### 3) Run
 
-### Basic writer
-
-```powershell
-& ".venv/Scripts/python.exe" "1_basic_blog_writing_agent.py"
-```
-
-### Research + image writer
+CLI workflow:
 
 ```powershell
-& ".venv/Scripts/python.exe" "2_research_blog_writing_agent.py"
+python 2_research_blog_writing_agent.py
 ```
 
-## Research writer workflow
+Streamlit demo app (recommended for interview):
 
-`START → router → (research or orchestrator) → worker fanout → reducer-subgraph → END`
+```powershell
+streamlit run 3_research_blog_writing_agent_frontend.py
+```
 
-Reducer subgraph:
+## 📂 Project structure
 
-`merge_content → decide_images → generate_and_place_images`
+- `1_basic_blog_writing_agent.py` — baseline planner → workers → reducer flow
+- `2_research_blog_writing_agent.py` — full research + image pipeline
+- `research_blog_wriging_agent_backend.py` — backend app used by Streamlit frontend
+- `3_research_blog_writing_agent_frontend.py` — interactive UI for generation and downloads
+- `images/ui/` — UI screenshots for showcase
+- `images/blog/` — saved blog outputs/screenshots
+- `output.md` — latest generated blog output
 
-- **Router** decides `closed_book`, `hybrid`, or `open_book`
-- **Research node** gathers evidence via Tavily when needed
-- **Orchestrator** builds a structured section plan
-- **Workers** write section markdown
-- **Image planner** inserts placeholders like `[[IMAGE_1]]`
-- **Image generator** tries Gemini first, then falls back to local SVG diagrams when needed
+## 🎯 Interview talking points
 
-## Output behavior
+1. **Routing strategy:** chooses `closed_book`, `hybrid`, or `open_book` before planning.
+2. **Grounded generation:** evidence-aware writing with citation constraints.
+3. **Robustness:** graceful fallback when image APIs fail/quota is hit.
+4. **Parallelism concept:** planner + worker fanout pattern in LangGraph.
+5. **Product mindset:** not just scripts—end-to-end UI with artifact downloads.
 
-- `output.md` is always written by the research workflow.
-- Images are written into `images/`.
-- Placeholder tokens are replaced with Markdown image links.
+## ✅ Current status
 
-### Fallback behavior
-
-- If image planning times out/fails, deterministic placeholders/specs are generated.
-- If Gemini image generation fails (quota, timeout, API issue), local SVG fallback diagrams are created so the blog still contains visual assets.
-
-## Notes
-
-- `.env` is git-ignored to protect secrets.
-- Python 3.14 currently shows compatibility warnings in some dependencies; Python 3.11/3.12 is recommended for a quieter run.
+- End-to-end generation works with markdown + visual assets.
+- UI screenshots and sample output are included for quick reviewer scan.
+- `.env` is git-ignored (secrets are not committed).
