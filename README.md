@@ -1,25 +1,27 @@
 # AI Agent (LangGraph) — Blog Writing
 
-This project contains two LangGraph-based blog generators:
+This repository contains two LangGraph-based blog generators:
 
 1. **Basic writer** (`1_basic_blog_writing_agent.py`)  
-   Plans sections and writes a complete Markdown blog.
-2. **Research writer** (`2_research_blog_writing_agent.py`)  
-   Adds routing + web research (Tavily) before planning and drafting sections.
+   Plans sections and writes a Markdown blog.
+2. **Research + image writer** (`2_research_blog_writing_agent.py`)  
+   Adds routing, optional Tavily research, and image enrichment (Gemini + local SVG fallback).
 
 ## Project structure
 
-- `1_basic_blog_writing_agent.py` — basic planner → workers → reducer flow
-- `2_research_blog_writing_agent.py` — router → optional research → planner → workers → reducer
+- `1_basic_blog_writing_agent.py` — planner → workers → reducer flow
+- `2_research_blog_writing_agent.py` — router → optional research → planner → workers → reducer subgraph with images
+- `images/` — generated images (PNG or local fallback SVG)
+- `output.md` — latest generated blog output from the research writer
 - `requirements.txt` — project dependencies
 - `.env.example` — environment variable template
-- `unlocking_learning_potential_the_benefits_of_using_ai_in_education.md` — sample generated output
 
 ## Requirements
 
-- Python **3.11+** (Python 3.11/3.12 recommended for best ecosystem compatibility)
-- OpenAI API key
-- Tavily API key (required for research-enabled flow)
+- Python **3.11+** (Python 3.11/3.12 recommended for best compatibility)
+- OpenAI API key (`OPENAI_API_KEY`)
+- Tavily API key (`TAVILY_API_KEY`) for research mode
+- Google AI API key (`GOOGLE_API_KEY`) for Gemini image generation (optional if fallback images are acceptable)
 
 ## Setup
 
@@ -48,13 +50,14 @@ pip install -r requirements.txt
 ### 3) Configure environment variables
 
 - Copy `.env.example` to `.env`
-- Fill in required keys
+- Fill in keys
 
 Example:
 
 ```dotenv
 OPENAI_API_KEY="your_openai_api_key_here"
 TAVILY_API_KEY="your_tavily_api_key_here"
+GOOGLE_API_KEY="your_google_ai_api_key_here"
 
 # Optional observability
 LANGCHAIN_TRACING_V2=true
@@ -71,35 +74,39 @@ LANGCHAIN_PROJECT="langgraph-blog-agent"
 & ".venv/Scripts/python.exe" "1_basic_blog_writing_agent.py"
 ```
 
-### Research writer (uses Tavily)
+### Research + image writer
 
 ```powershell
 & ".venv/Scripts/python.exe" "2_research_blog_writing_agent.py"
 ```
 
-## How the research writer works
+## Research writer workflow
 
-The `2_research_blog_writing_agent.py` workflow runs this graph:
+`START → router → (research or orchestrator) → worker fanout → reducer-subgraph → END`
 
-`START → router → (research or orchestrator) → worker fanout → reducer → END`
+Reducer subgraph:
+
+`merge_content → decide_images → generate_and_place_images`
 
 - **Router** decides `closed_book`, `hybrid`, or `open_book`
-- **Research node** gathers evidence URLs/snippets via Tavily when needed
-- **Orchestrator** creates a structured section plan
-- **Worker nodes** draft section Markdown
-- **Reducer** joins sections and writes final blog output
+- **Research node** gathers evidence via Tavily when needed
+- **Orchestrator** builds a structured section plan
+- **Workers** write section markdown
+- **Image planner** inserts placeholders like `[[IMAGE_1]]`
+- **Image generator** tries Gemini first, then falls back to local SVG diagrams when needed
 
-## Output
+## Output behavior
 
-- A Markdown file is generated in the project folder.
-- In the research script, filename is based on `plan.blog_title`.
+- `output.md` is always written by the research workflow.
+- Images are written into `images/`.
+- Placeholder tokens are replaced with Markdown image links.
 
-Example generated file:
+### Fallback behavior
 
-- `State of Multimodal LLMs in 2026.md`
+- If image planning times out/fails, deterministic placeholders/specs are generated.
+- If Gemini image generation fails (quota, timeout, API issue), local SVG fallback diagrams are created so the blog still contains visual assets.
 
 ## Notes
 
 - `.env` is git-ignored to protect secrets.
-- If you encounter Python 3.14 compatibility warnings from dependencies, prefer Python 3.11/3.12.
-- You may see deprecation warnings for `TavilySearchResults`; the script still runs, but future cleanup can migrate to `langchain_tavily`.
+- Python 3.14 currently shows compatibility warnings in some dependencies; Python 3.11/3.12 is recommended for a quieter run.
