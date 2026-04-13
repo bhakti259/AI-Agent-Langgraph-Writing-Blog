@@ -113,13 +113,6 @@ streamlit run 3_research_blog_writing_agent_frontend.py
 - `images/blog/` — saved blog outputs/screenshots
 - `output.md` — latest generated blog output
 
-## 🎯 Interview talking points
-
-1. **Routing strategy:** chooses `closed_book`, `hybrid`, or `open_book` before planning.
-2. **Grounded generation:** evidence-aware writing with citation constraints.
-3. **Robustness:** graceful fallback when image APIs fail/quota is hit.
-4. **Parallelism concept:** planner + worker fanout pattern in LangGraph.
-5. **Product mindset:** not just scripts—end-to-end UI with artifact downloads.
 
 ## ✅ Current status
 
