@@ -113,7 +113,6 @@ streamlit run 3_research_blog_writing_agent_frontend.py
 - `images/blog/` — saved blog outputs/screenshots
 - `output.md` — latest generated blog output
 
-
 ## ✅ Current status
 
 - End-to-end generation works with markdown + visual assets.
